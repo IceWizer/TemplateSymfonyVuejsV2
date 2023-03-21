@@ -17,11 +17,11 @@ insert_final_newline = true
 
 [*.{js,html,ts,tsx}]
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 [*.json]
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 [*.md]
 trim_trailing_whitespace = false
@@ -45,7 +45,7 @@ trim_trailing_whitespace = false
 
 [.github/workflows/*.yml]
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 [.gitmodules]
 indent_style = tab
@@ -57,7 +57,7 @@ indent_size = 4
 
 [.travis.yml]
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 [composer.json]
 indent_style = space

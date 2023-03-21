@@ -43,6 +43,14 @@ RUN apk add --no-cache \
 		file \
 		gettext \
 		git \
+    	gcc \
+    	g++ \
+    	libc-dev \
+        make \
+    	libpng-dev \
+    	libxml2-dev \
+    	libzip-dev \
+    	libxslt-dev unzip \
 	;
 
 RUN set -eux; \
@@ -51,9 +59,17 @@ RUN set -eux; \
     	zip \
     	apcu \
 		opcache \
-    ;
-
+    ; \
+    apk add nodejs npm; \
+    if [ -f composer.json ]; then \
+		npm install; \
+	fi
 ###> recipes ###
+###> doctrine/doctrine-bundle ###
+RUN apk add --no-cache --virtual g++; \
+	docker-php-ext-install -j$(nproc) pdo_mysql opcache intl zip calendar dom mbstring gd xsl; \
+	apk add --no-cache --virtual so:libpq.so.5
+###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
@@ -101,6 +117,23 @@ RUN set -eux; \
 		chmod +x bin/console; sync; \
     fi
 
+# Install prerequisites required for tools and extensions installed later on.
+RUN apk add --update bash gnupg less libpng-dev libzip-dev su-exec unzip
+
+
+# Retrieve the script used to install PHP extensions from the source container.
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/install-php-extensions
+
+# Install required PHP extensions and all their prerequisites available via apt.
+RUN chmod uga+x /usr/bin/install-php-extensions \
+    && sync \
+    && install-php-extensions bcmath ds exif intl pcntl
+
+# Symfony CLI
+RUN wget https://get.symfony.com/cli/installer -O - | bash && mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
+
+
+
 # Dev image
 FROM app_php AS app_php_dev
 
@@ -120,7 +153,6 @@ RUN rm -f .env.local.php
 
 # Caddy image
 FROM caddy:2.6-alpine AS app_caddy
-
 WORKDIR /srv/app
 
 COPY --from=app_caddy_builder --link /usr/bin/caddy /usr/bin/caddy

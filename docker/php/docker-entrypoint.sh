@@ -6,7 +6,7 @@ if [ "${1#-}" != "$1" ]; then
 	set -- php-fpm "$@"
 fi
 
-if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
+if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ] || [ "$1" = 'npm' ]; then
 	# Install the project the first time PHP is started
 	# After the installation, the following block can be deleted
 	if [ ! -f composer.json ]; then
