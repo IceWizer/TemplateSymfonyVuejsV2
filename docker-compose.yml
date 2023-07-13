@@ -1,4 +1,4 @@
-version: "3.4"
+version: "3.8"
 
 services:
   php:
@@ -11,6 +11,8 @@ services:
     restart: unless-stopped
     volumes:
       - php_socket:/var/run/php
+    depends_on:
+      - mysql
     healthcheck:
       interval: 10s
       timeout: 3s
@@ -18,7 +20,7 @@ services:
       start_period: 30s
     environment:
       # Run "composer require symfony/orm-pack" to install and configure Doctrine ORM
-      DATABASE_URL: mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-root}@mysql:3306/${MYSQL_DATABASE:-symfony}?serverVersion=${MYSQL_VERSION:-5.7}
+      DATABASE_URL: ${DATABASE_URL:-mysql://root:root@mysql:3306/symfony?serverVersion=5.7}
       # Run "composer require symfony/mercure-bundle" to install and configure the Mercure integration
       MERCURE_URL: ${CADDY_MERCURE_URL:-http://caddy/.well-known/mercure}
       MERCURE_PUBLIC_URL: https://${SERVER_NAME:-localhost}/.well-known/mercure
@@ -52,7 +54,7 @@ services:
       - target: 443
         published: ${HTTP3_PORT:-443}
         protocol: udp
-    
+  
   mysql:
     image: mysql:${MYSQL_VERSION:-5.7}
     restart: unless-stopped
@@ -73,7 +75,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-    
+
 
 # Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
 ###> symfony/mercure-bundle ###
@@ -84,5 +86,3 @@ volumes:
   caddy_data:
   caddy_config:
   mysql_data:
-###> symfony/mercure-bundle ###
-###< symfony/mercure-bundle ###
