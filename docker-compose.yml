@@ -37,7 +37,7 @@ services:
     volumes:
       - genealogictree-db:/var/lib/mysql
   encore:
-    image: node:20-slim
+    image: node:21-slim
     volumes:
       - .:/var/www/html
     working_dir: /var/www/html
