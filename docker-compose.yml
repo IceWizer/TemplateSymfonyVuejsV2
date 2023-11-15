@@ -1,88 +1,46 @@
-version: "3.8"
-
+version: '3.8'
 services:
-  php:
-    build:
-      context: .
-      target: app_php
-      args:
-        SYMFONY_VERSION: ${SYMFONY_VERSION:-}
-        STABILITY: ${STABILITY:-stable}
-    restart: unless-stopped
+  web:
+    image: httpd:2.4
+    ports:
+      - "80:80"
     volumes:
-      - php_socket:/var/run/php
+      - .:/var/www/html
+      - ./docker/web/conf/httpd.conf:/usr/local/apache2/conf/httpd.conf
     depends_on:
-      - mysql
-    healthcheck:
-      interval: 10s
-      timeout: 3s
-      retries: 3
-      start_period: 30s
-    environment:
-      # Run "composer require symfony/orm-pack" to install and configure Doctrine ORM
-      DATABASE_URL: ${DATABASE_URL:-mysql://root:root@mysql:3306/symfony?serverVersion=5.7}
-      # Run "composer require symfony/mercure-bundle" to install and configure the Mercure integration
-      MERCURE_URL: ${CADDY_MERCURE_URL:-http://caddy/.well-known/mercure}
-      MERCURE_PUBLIC_URL: https://${SERVER_NAME:-localhost}/.well-known/mercure
-      MERCURE_JWT_SECRET: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
-
-  caddy:
-    build:
-      context: .
-      target: app_caddy
-    depends_on:
+      - db
       - php
     environment:
-      SERVER_NAME: ${SERVER_NAME:-localhost, caddy:80}
-      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
-      MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
-    restart: unless-stopped
+      - APACHE_DOCUMENT_ROOT=/var/www/html/public
+    links:
+      - "db:database"
+      - "php:php"
+  php:
+    build: .
     volumes:
-      - php_socket:/var/run/php
-      - caddy_data:/data
-      - caddy_config:/config
+      - .:/var/www/html
+    depends_on:
+      - db
+    links:
+      - "db:database"
+  db:
+    image: mysql:8.0
     ports:
-      # HTTP
-      - target: 80
-        published: ${HTTP_PORT:-80}
-        protocol: tcp
-      # HTTPS
-      - target: 443
-        published: ${HTTPS_PORT:-443}
-        protocol: tcp
-      # HTTP/3
-      - target: 443
-        published: ${HTTP3_PORT:-443}
-        protocol: udp
-  
-  mysql:
-    image: mysql:${MYSQL_VERSION:-5.7}
-    restart: unless-stopped
+      - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-symfony}
-      MYSQL_USER: ${MYSQL_USER:-root}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
+      - MYSQL_ROOT_PASSWORD=Not24get
+      - MYSQL_DATABASE=genealogictree
+      - MYSQL_USER=genealogictree
+      - MYSQL_PASSWORD=Not24get
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
     volumes:
-      - mysql_data:/var/lib/mysql
-    ports:
-      - target: 3306
-        published: ${MYSQL_PORT:-3306}
-        protocol: tcp
-
+      - genealogictree-db:/var/lib/mysql
   encore:
-    image: node:18-alpine
-    working_dir: /app
+    image: node:20-slim
     volumes:
-      - .:/app
-
-
-# Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
-###> symfony/mercure-bundle ###
-###< symfony/mercure-bundle ###
+      - .:/var/www/html
+    working_dir: /var/www/html
 
 volumes:
-  php_socket:
-  caddy_data:
-  caddy_config:
-  mysql_data:
+  genealogictree-db: {}
