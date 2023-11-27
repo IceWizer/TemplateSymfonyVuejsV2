@@ -8,13 +8,11 @@ services:
       - .:/var/www/html
       - ./docker/web/conf/httpd.conf:/usr/local/apache2/conf/httpd.conf
     depends_on:
-      - db
       - php
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html/public
     links:
       - "db:database"
-      - "php:php"
   php:
     build: .
     volumes:
